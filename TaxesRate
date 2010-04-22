@@ -1,0 +1,31 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname TaxesRate) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;; Contract: get-texrate: number -> number
+;; Purpose: get the texas rate for an income
+;; Example: (get-texrate 23700) -> 11.5
+(define (get-texrate income)
+  (* 0.5 (floor (/ income 1000)))
+  )
+
+(check-expect (get-texrate 40000) 20)
+(check-expect (get-texrate 23700) 11.5)
+
+
+;;===================================================
+;; Contract: get-income: number -> number
+;; Purpose: get the netto income for the brutto value
+;; Example: (get-income 23700) -> 2725.5
+(define (get-income income)
+  (let 
+      
+      ([rate (get-texrate income)])
+    
+    (/ (* income rate) 100)
+    
+    )
+  )
+
+
+(check-expect (get-income 40000) 8000)
+(check-expect (get-texrate 23700) 2725.5)
