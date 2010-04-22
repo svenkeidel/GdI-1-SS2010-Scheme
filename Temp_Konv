@@ -1,0 +1,69 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname Temp_Konv) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;; Contract: temp-to-kelvin: number symbol -> number
+;; Purpose: to konvert a temperature from the type in symbol
+;; to kelvin
+;; Possible values for the symbol are:
+;; ’Kelvin, ’Celsius, ’Fahrenheit, ’Rankine, ’Reaumur
+;; Examples: (temp-to-kelvin 20 'Celsius)
+;; 	->	293.15
+;; 	returns the result of the convertion of roomtemperatur(20°C) in Kelvin
+(define (temp-to-kelvin temp from)
+  (cond[(symbol=? from 'Kelvin) temp]
+       [(symbol=? from 'Celsius) (+ temp 273.15)]
+       [(symbol=? from 'Fahrenheit) (* (+ temp 459.67) (/ 5 9))]
+       [(symbol=? from 'Rankine) (* temp (/ 5 9))]
+       [(symbol=? from 'Reaumur) (+ (* temp 1.25) 273.15)]
+       [else (error 'wrong_type "the type of the insert temperature type is unknown")])
+  )
+
+(check-expect (temp-to-kelvin 20 'Kelvin) 20)
+(check-expect (temp-to-kelvin 20 'Celsius) 293.15)
+(check-within (temp-to-kelvin 20 'Fahrenheit) 266.483 0.01)
+(check-within (temp-to-kelvin 20 'Rankine) 11.1 0.15)
+(check-expect (temp-to-kelvin 20 'Reaumur) 298.15)
+(check-error (temp-to-kelvin 20 'FalscheTemperaturangabe) "wrong_type: the type of the insert temperature type is unknown")
+
+;;===========================================================================
+;; Contract: convert_kelvin_to_x: number symbol -> number
+;; Purpose: to konvert a temparture from kelvin to the type
+;; in symbol
+;; Possible values for the symbol are:
+;; ’Kelvin, ’Celsius, ’Fahrenheit, ’Rankine, ’Reaumur
+;; Examples: (convert_kelvin_to_x 0 'Celsius)
+;; 	->	-273.15
+;; 	returns the result of the convertion of 0°K to Celsius
+(define (convert_kelvin_to_x temp to)
+  (cond[(symbol=? to 'Kelvin) temp]
+       [(symbol=? to 'Celsius) (- temp 273.15)]
+       [(symbol=? to 'Fahrenheit) (- (* temp (/ 9 5)) 459.67)]
+       [(symbol=? to 'Rankine) (* temp (/ 9 5))]
+       [(symbol=? to 'Reaumur) (* (- temp 273.15) 0.8)]
+       [else (error 'wrong_type "the type of the insert temperature type is unknown")])
+  )
+
+(check-expect (convert_kelvin_to_x 20 'Kelvin) 20)
+(check-expect (convert_kelvin_to_x 293.15 'Celsius) 20)
+(check-within (convert_kelvin_to_x 266.483 'Fahrenheit) 20 0.5)
+(check-within (convert_kelvin_to_x 11.1 'Rankine) 20 0.5)
+(check-expect (convert_kelvin_to_x 298.15 'Reaumur) 20)
+(check-error (convert_kelvin_to_x 20 'FalscheTemperaturangabe) "wrong_type: the type of the insert temperature type is unknown")
+
+;;==========================================================================
+;; Contract: convert_x_to_y: number symbol symbol -> number
+;; Purpose: to konvert a temparture of the type of the first symbol
+;; to the type of the second symbol
+;; Possible values for the symbols are:
+;; ’Kelvin, ’Celsius, ’Fahrenheit, ’Rankine, ’Reaumur
+;; Examples: (convert_x_to_y 451 'Fahrenheit 'Rankine) )
+;; 	->	910.67
+;; 	returns the result of the convertion of 451°F to Rankine (remember the film ^^)
+(define (convert_x_to_y temp from to)
+  (convert_kelvin_to_x 
+   (temp-to-kelvin temp from)
+   to)
+  )
+
+(check-expect (convert_x_to_y 20 'Celsius 'Fahrenheit) 68)
+(check-expect (convert_x_to_y 451 'Fahrenheit 'Rankine) 910.67)

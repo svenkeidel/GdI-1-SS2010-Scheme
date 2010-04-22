@@ -1,0 +1,8 @@
+#lang scheme
+(define-syntax (while whileloop)
+  (syntax-case whileloop ()
+    ((_ condition expression ...)
+     #` (do ()
+          ((not condition))
+          expression
+          ...))))
