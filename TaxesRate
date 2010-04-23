@@ -28,4 +28,4 @@
 
 
 (check-expect (get-income 40000) 8000)
-(check-expect (get-texrate 23700) 2725.5)
+(check-expect (get-income 23700) 2725.5)
