@@ -1,0 +1,94 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname Book-admin) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+(define-struct book (author title genre))
+
+(define lotr1 (make-book "John R. R. Tolkien" 
+                         "The Fellowship of the Ring"
+                         'Fantasy))
+(define glory (make-book "David Brin"
+                         "Glory Season"
+                         'ScienceFiction))
+(define firstFamily (make-book "David Baldacci"
+                               "First Family"
+                               'Thriller))
+(define JavaKomp (make-book "Dirk Louis"
+                            "Java 6 Kompendium"
+                            'SpecialistBook))
+(define CPPKomp (make-book "Dirk Louis"
+                           "C / C++ Kompendium"
+                           'SpecialistBook))
+(define some-books (list lotr1 glory firstFamily JavaKomp CPPKomp))
+
+
+;; ==================================================================================
+;; Contract: count-books-for-genre: symbol list-of-books -> number
+;; Purpose: Count the number of Books with the Genre of the symbol in "list-of-books"
+;; Examples (count-books-for-genre 'Fantasy some-books) -> 1
+(define (count-books-for-genre genre lob)
+  (if (empty? lob)
+      0
+      (if (equal? (book-genre (first lob)) genre)
+           (+ 1 (count-books-for-genre genre (rest lob)))
+           (+ 0 (count-books-for-genre genre (rest lob)))
+           )
+      )
+  )
+
+;; Tests
+(check-expect (count-books-for-genre 'SpecialistBook some-books) 2)
+(check-expect (count-books-for-genre 'SomeGenre some-books) 0)
+(check-expect (count-books-for-genre 'SpecialistBook empty) 0)
+
+
+
+;; =====================================================================================
+;; Contract: count-genre-distribution: list-of-books list-of-symbols -> list-of-numbers
+;; Purpose: the function returns a list of numbers for the amount of books for a 
+;;          specific genre, in the order of the genres-list
+;; Example: (count-genre-distribution some-books (list 'Fantasy ' SpecialistBook))
+;;     -> (cons 1 (cons 2 empty))
+(define (count-genre-distribution lob genres)
+  (if (or (empty? lob) (empty? genres))
+      empty
+      (append 
+       (cons (count-books-for-genre (first genres) lob) empty)
+       (count-genre-distribution lob (rest genres))
+       )
+      )
+  )
+
+;; Tests
+(check-expect 
+ (count-genre-distribution some-books (list 'ScienceFiction 'Fantasy ' SpecialistBook)) 
+ (list 1 1 2))
+(check-expect (count-genre-distribution some-books empty) empty)
+
+
+
+;; =====================================================================
+;; Contract: print-genre-spread: list-of-books list-of-symbols -> String
+;; Purpose: the function produces a well formated string for the output
+;;          of the spread of the books over the genres
+;; Example: (print-genre-spread some-books (list 'ScienceFiction 'Fantasy ' SpecialistBook))
+;;     -> "ScienceFiction: 1 book(s); Fantasy: 1 book(s); SpecialistBook: 2 book(s); "
+(define (print-genre-spread books genres)
+  (if (empty? genres)
+      ""
+      (string-append 
+       (symbol->string (first genres))
+       ": "
+       (number->string
+        (count-books-for-genre (first genres) books))
+       " book(s); "
+       ;; next entry
+       (print-genre-spread books (rest genres))
+       )
+      )
+  )
+
+;; Tests
+(check-expect 
+ (print-genre-spread some-books (list 'Fantasy 'ScienceFiction ' SpecialistBook))
+ "Fantasy: 1 book(s); ScienceFiction: 1 book(s); SpecialistBook: 2 book(s); ")
+(check-expect (print-genre-spread some-books empty) "")
