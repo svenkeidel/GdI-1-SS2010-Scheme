@@ -1,0 +1,66 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname list-operations) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;; ==========================================================
+;; Contract: list-length: list -> number
+;; Purpose: Count the number of elements in list
+;; Example: (list-length (list 'a 'b 'c)) -> 3
+;; ==========================================================
+(define (list-length lst)
+  (count lst 0)
+  )
+
+(check-expect (list-length (list 1 2 3 4 'a 'b 'c)) 7)
+(check-expect (list-length empty) 0)
+
+;; ==========================================================
+;; Contract: count: list number -> number
+;; Purpose: Helperfunction for list-length, x is the iterator
+;;          and has always the value 0 at function call
+;; Example: (count (list 'a 'b 'c) 0) -> 3
+;; ==========================================================
+(define (count lst x)
+  (if (empty? lst) 0
+      (+ 1 (count (rest lst) (+ x 1)))
+      ))
+
+(check-expect (count (list 1 2 3 4 'a 'b 'c) 0) 7)
+(check-expect (count empty 0) 0)
+
+
+;; ==========================================================
+;; Contract: contains?: list-of-symbols symbol -> boolean
+;; Purpose: wether the list contains the symbol
+;; (contains? (list 'a 'b 'c) 'b) -> true
+;; ==========================================================
+(define (contains? lst x)
+  (cond 
+    [(empty? lst) false]
+    [(equal? (first lst) x) true]
+    [else (contains? (rest lst) x)])
+  )
+
+(check-expect (contains? (list 'a 'b 'c) 'b) true)
+(check-expect (contains? (list 'a 'b 'c) 'd) false)
+(check-expect (contains? empty 'd) false)
+
+
+;; ==========================================================
+;; Contract: remove-duplicates: list-of-symbol -> list-of-symbol
+;; Purpose: returns a new list of symbols without duplicates
+;; Example: (remove-duplicates (list 'a 'a 'b 'b 'c 'c))
+;;               -> (list 'a 'b 'c)
+;; ==========================================================
+(define (remove-duplicates lst)
+  (cond
+    [(empty? lst) empty]
+    [(contains? (rest lst) (first lst)) 
+     (remove-duplicates (rest lst))]
+    [else
+     (cons (first lst) (remove-duplicates (rest lst)))
+     ]
+    ))
+
+(check-expect (remove-duplicates (list 'a 'a 'b 'b 'c 'c)) (list 'a 'b 'c))
+(check-expect (remove-duplicates empty) empty)
+(check-expect (remove-duplicates (list 'a)) (list 'a))
