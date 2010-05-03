@@ -1,0 +1,27 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-reader.ss" "lang")((modname rgb-ops) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+(define-struct color (red green blue))
+
+(define (hue color)
+  (local (
+          (define r (/ (color-red color) 255))
+          (define g (/ (color-green color) 255))
+          (define b (/ (color-blue color) 255))
+          (define M (max r g b))
+          (define m (min r g b))
+          (define (calc x y) (* 60 (/ (- x y) (- M m)))))
+  (cond
+    [(=  M m) 0]
+    [(= r M) (modulo (+ 0 (calc g b)) 360)]
+    [(= g M) (modulo (+ 120 (calc b r)) 360)]
+    [(= b M) (modulo (+ 240 (calc r g)) 360)]
+  )
+))
+
+(check-expect (hue (make-color 0 0 0)) 0)
+(check-expect (hue (make-color 255 255 255)) 0)
+(check-expect (hue (make-color 255 0 0)) 0)
+(check-expect (hue (make-color 0 255 0)) 120)
+(check-expect (hue (make-color 0 0 255)) 240)
+(check-expect (hue (make-color 255 255 0)) 60)

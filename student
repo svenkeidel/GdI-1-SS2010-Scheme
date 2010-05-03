@@ -1,0 +1,153 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+;;==========================================================================
+;; homework: structure representing homework points
+;; nu: number − the number of the homework
+;; points: number − the number of points reached
+(define-struct homework (nr points))
+
+;;==========================================================================
+;; mid-term: points in one of two mid-term exams
+;; nu: number − the number of the mid-term exam
+;; points: number − the number of points reached
+(define-struct mid-term (nr points))
+
+;;==========================================================================
+;; final-lab: points in the final-lab
+;; group: number − the number of the student's group
+;; points: number − the number of points reached
+(define-struct final-lab (group points))
+
+;;==========================================================================
+;; student: representing a CS 1 student
+;; id: number − unique ID of the student
+;; name: string − the name of the student
+;; hw: (listof homework) − the student’s homework(s)
+;; mid1: mid−term − the student’s result in mid−term A
+;; mid2: mid−term − the student’s result in mid−term B
+;; lab: final−lab − the student’s results in the finallab
+(define-struct student (id name hw mid1 mid2 lab))
+
+;; exame student
+(define peter (list 
+               4 ;; id
+               "Peter Adam" ;; name
+               (list (list 1 3) (list 2 4)) ;; listof homework
+               (list 1 31) ;; mid-term 1
+               (list 2 42) ;; mid-term 2
+               (list 10 85))) ;; finallab
+
+(define peter-id (list 
+               'a ;; id
+               "Peter Adam" ;; name
+               (list (list 1 3) (list 2 4)) ;; listof homework
+               (list 1 31) ;; mid-term 1
+               (list 2 42) ;; mid-term 2
+               (list 10 85))) ;; finallab
+
+
+;;==========================================================================
+;; Contract: list->student: (listof X) -> student
+;; (listof X): (list [id: number]
+;;                   [name: string]
+;;                   [(list-of-homework): (listof homework)]
+;;                   [mid-term1: mid-term]
+;;                   [mid-term2: mid-term]
+;;                   [finallab: final-lab])
+;; Purpose: turns a formated list into student-object
+;; Example: (list->student 
+;;      (list 4 "Peter Adam" (list (list 1 3) (list 2 4)) (list 1 31) (list 2 42) (list 10 85))))
+;;      ->  (make-student 4 
+;;                        ”Peter Adam” 
+;;                        (list (make-homework 1 3)
+;;                              (make-homework 2 4))
+;;                        (make-mid-term 1 31)
+;;                        (make-mid-term 2 42)
+;;                        (make-final-lab 10 85))))
+(define (list->student lfs) ;; lfs: list-for-student
+  (cond 
+    [(not (= (length lfs) 6)) (error 'list_format_exeption "wrong formated list")]
+    [else 
+     (local ((define id (first lfs))
+             (define name (second lfs))
+             (define homework (parse-homework (third lfs)))
+             (define mid1 (parse-mid-term (fourth lfs)))
+             (define mid2 (parse-mid-term (fifth lfs)))
+             (define finallab (parse-lab (sixth lfs))))
+       (cond 
+         [(or (not (number? id))
+              (not (string? name))
+              (string=? name ""))
+          (error 'list_format_exeption "wrong formated list")]
+         [else 
+          (make-student id name homework mid1 mid2 finallab)]))]))
+
+(check-expect (list->student peter)(make-student 4 "Peter Adam" (list (make-homework 1 3) (make-homework 2 4)) (make-mid-term 1 31) (make-mid-term 2 42) (make-final-lab 10 85)))
+(check-error (list->student peter-id) "list_format_exeption: wrong formated list")
+(check-error (list->student empty) "list_format_exeption: wrong formated list")
+
+
+;;==========================================================================
+;; Contract: parse-homework: (listof (pairof number number)) -> (listof homework)
+;; Purpose: parses the list of pairs of numbers to a list with homework-structs
+;; Example: (parse-homework (list (list 1 2) (list 3 4)))
+;;               -> (list (make-homework 1 2) (make-homework 3 4))
+(define (parse-homework lopons) ;; lopons: list-of-pair-of-numbers
+  (cond
+    [(empty? lopons) empty]
+    [else (local ((define pon (first lopons)) ;; pon: pair-of-number
+                  (define rol (rest lopons))) ;; rol: rest-of-list
+            (cond
+              [(and (= (length pon) 2)
+                 (andmap number? pon)
+                 (andmap positive? pon)
+                 (not (member (first pon) (map first rol))))
+               (cons (make-homework (first pon)(second pon)) (parse-homework rol))
+               ]
+              [else (error 'list_format_exeption "wrong formated list")]))]))
+
+(check-expect (parse-homework (list (list 1 2) (list 3 4)(list 5 6)))
+              (list (make-homework 1 2)(make-homework 3 4)(make-homework 5 6)))
+(check-error (parse-homework (list (list 1 2 3))) "list_format_exeption: wrong formated list")
+(check-error (parse-homework (list (list 'a 3))) "list_format_exeption: wrong formated list")
+(check-error (parse-homework (list (list -1 -3))) "list_format_exeption: wrong formated list")
+(check-error (parse-homework (list (list 1 2)(list 1 3))) "list_format_exeption: wrong formated list")
+
+
+;;==========================================================================
+;; Contract: parse-mid-term: (listof number number) -> mid-term
+;; Purpose: parses the list of two numbers to a mid-term-struct
+;; Example: (parse-mid-term (list 1 2)) -> (make-mid-term 1 2)
+(define (parse-mid-term lonn) ;; lonn: list-of-number-number
+  (cond [(and (= (length lonn) 2)
+              (andmap number? lonn)
+              (andmap positive? lonn)
+              )
+         (make-mid-term (first lonn)(second lonn))
+         ]
+        [else (error 'list_format_exeption "wrong formated list")]))
+
+(check-expect(parse-mid-term (list 1 2)) (make-mid-term 1 2))
+(check-error (parse-mid-term (list 1)) "list_format_exeption: wrong formated list")
+(check-error (parse-mid-term (list 'a 2)) "list_format_exeption: wrong formated list")
+(check-error (parse-mid-term (list 1 -2)) "list_format_exeption: wrong formated list")
+
+
+;;==========================================================================
+;; Contract: parse-lab: (listof number number) -> final-lab
+;; Purpose: parses the list of two numbers to a final-lab-struct
+;; Example: (parse-lab (list 1 2)) -> (make-final-lab 1 2)
+(define (parse-lab lonn) ;; lonn: list-of-number-number
+  (cond [(and (= (length lonn) 2)
+              (andmap number? lonn)
+              (andmap positive? lonn)
+              )
+         (make-final-lab (first lonn)(second lonn))
+         ]
+        [else (error 'list_format_exeption "wrong formated list")]))
+
+(check-expect (parse-lab (list 1 2)) (make-final-lab 1 2))
+(check-error (parse-lab (list 1)) "list_format_exeption: wrong formated list")
+(check-error (parse-lab (list 'a 2)) "list_format_exeption: wrong formated list")
+(check-error (parse-lab (list 1 -2)) "list_format_exeption: wrong formated list")
