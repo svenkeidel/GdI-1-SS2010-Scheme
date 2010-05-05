@@ -1,6 +1,8 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-reader.ss" "lang")((modname tree-ops) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+(require scheme/list)
+
 ;;==========================================================================
 ;; Purpose: structure representing a binary tree
 ;; left: treenode - the left child of the node
@@ -31,8 +33,8 @@
                     (tree-insert n (right ton)))]))
 
 ;;===Tests: tree-insert===
-;;(check-expect (tree-insert 1 (make-treenode empty 2 r)) root)
-;;(check-expect (tree-insert 3 (make-treenode l 2 empty)) root)
+(check-expect (tree-insert 1 (make-treenode empty 2 r)) root)
+(check-expect (tree-insert 3 (make-treenode l 2 empty)) root)
 
 
 ;;==========================================================================
@@ -48,10 +50,10 @@
     [else false]))
 
 ;;===Tests: leaf?===
-;;(check-expect (leaf? l) true)
-;;(check-expect (leaf? r) true)
-;;(check-expect (leaf? root) false)
-;;(check-expect (leaf? empty) false)
+(check-expect (leaf? l) true)
+(check-expect (leaf? r) true)
+(check-expect (leaf? root) false)
+(check-expect (leaf? empty) false)
 
 
 ;;==========================================================================
@@ -64,8 +66,8 @@
     [else (treenode-value ton)]))
 
 ;;===Tests: node-value===
-;;(check-error (node-value empty) "definition_error: A empty tree has no value")
-;;(check-expect (node-value l) 1)
+(check-error (node-value empty) "definition_error: A empty tree has no value")
+(check-expect (node-value l) 1)
 
 
 ;;==========================================================================
@@ -78,8 +80,8 @@
     [else (treenode-left ton)]))
 
 ;;===Tests: left===
-;;(check-expect (left root) l)
-;;(check-expect (left empty) empty)
+(check-expect (left root) l)
+(check-expect (left empty) empty)
 
 
 ;;==========================================================================
@@ -92,8 +94,8 @@
     [else (treenode-right ton)]))
 
 ;;===Tests: right===
-;;(check-expect (right root) r)
-;;(check-expect (right empty) empty)
+(check-expect (right root) r)
+(check-expect (right empty) empty)
 
 
 ;;==========================================================================
@@ -105,33 +107,33 @@
         [else (foldl tree-insert ton lon)]))
 
 ;;===Tests: tree-insert-list===
-;;(check-expect (tree-insert-list (list 2 1 3) empty) root)
-;;(check-expect (tree-insert-list (list 1 2 3) empty) (make-treenode empty 1 
-;;                                                                   (make-treenode empty 2 r)))
-;;(check-expect (tree-insert-list empty root) root)
+(check-expect (tree-insert-list (list 2 1 3) empty) root)
+(check-expect (tree-insert-list (list 1 2 3) empty) (make-treenode empty 1 
+                                                                   (make-treenode empty 2 r)))
+(check-expect (tree-insert-list empty root) root)
 
 
 ;;==========================================================================
 ;; Contract: read-tree: (treeof numbers) -> (listof numbers)
 ;; Purpose: reads out a tree and return a sorted list of numbers
 ;; Example: (read-tree root) -> (list 1 2 3)
-;;(define (read-tree ton)
-;;  (cond
-;;    [(empty? ton) empty]
-;;    [else (list 
-;;           (node-value ton)
-;;           )]))
-
-;; Contract: unpack: (listof X) -> Z
-;;                   X: (listof X) | Y
-;;                   Y: not-a-list
-;;                   Z: (listof Y) | Y
-(define (unpack lox)
+(define (read-tree ton)
   (cond
-    [(empty? lox) empty]
-    [(and (not (list? lox))(= (length lox) 1)) lox]
-    [else (cons (unpack (first (first lox))) (unpack (rest (first lox))))]))
+    [(empty? ton) empty]
+    [else (flatten (list 
+           (read-tree (left ton))
+           (node-value ton)
+           (read-tree (right ton))))]))
 
-(check-expect (unpack (list (list 1 2 3))) (list 1 2 3))
 
-;;(check-expect (read-tree root) (list 1 2 3))
+(check-expect (read-tree root) (list 1 2 3))
+(check-expect (read-tree empty) empty)
+
+
+;;==========================================================================
+;; Contract: sort-list: (listof numbers) -> (listof numbers)
+;; Purpose: sorts a list of numbers over a binary tree algorithm
+;; Example: (sort-list (list 5 3456 34 1 -356 32)) -> (list -356 1 5 32 34 3456)
+(define (sort-list lon)
+  (read-tree (tree-insert-list lon empty)))
+
