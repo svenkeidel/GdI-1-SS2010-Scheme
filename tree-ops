@@ -1,8 +1,6 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-reader.ss" "lang")((modname tree-ops) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
-(require scheme/list)
-
 ;;==========================================================================
 ;; Purpose: structure representing a binary tree
 ;; left: treenode - the left child of the node
@@ -118,14 +116,26 @@
 ;; Purpose: reads out a tree and return a sorted list of numbers
 ;; Example: (read-tree root) -> (list 1 2 3)
 (define (read-tree ton)
-  (cond
-    [(empty? ton) empty]
-    [else (flatten (list 
-           (read-tree (left ton))
-           (node-value ton)
-           (read-tree (right ton))))]))
+  (local (
+          
+          (define res-lon empty)
+          
+          (define (calc ton) 
+            (cond
+              [(leaf? ton)
+               (node-value ton)]
+              [else
+               (append
+                res-lon
+                (list (calc (left ton)))
+                (list (node-value ton))
+                (list (calc (right ton))))])))
+    
+    (cond
+      [(empty? ton) empty]
+      [else (calc ton)])))
 
-
+;;===Tests: read-tree===
 (check-expect (read-tree root) (list 1 2 3))
 (check-expect (read-tree empty) empty)
 
