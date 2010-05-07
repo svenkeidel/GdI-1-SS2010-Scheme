@@ -58,7 +58,7 @@
 ;; Contract: list->student: (listof X) -> student
 ;; (listof X): (list [id: number]
 ;;                   [name: string]
-;;                   [(list-of-homework): (listof homework)]
+;;                   [(list-of-homework): (listof (pairof numbers))]
 ;;                   [mid-term1: mid-term]
 ;;                   [mid-term2: mid-term]
 ;;                   [finallab: final-lab])
@@ -74,7 +74,7 @@
 ;;                        (make-final-lab 10 85))))
 (define (list->student lfs) ;; lfs: list-for-student
   (cond 
-    [(not (= (length lfs) 6)) (error 'list_format_exeption "wrong formated list")]
+    [(not (= (length lfs) 6)) (error 'list_format_exeption "wrong number of elements in list")]
     [else 
      (local ((define id (first lfs))
              (define name (second lfs))
@@ -83,17 +83,22 @@
              (define mid2 (parse-mid-term (fifth lfs)))
              (define finallab (parse-lab (sixth lfs))))
        (cond 
-         [(or (not (number? id))
-              (not (string? name))
-              (string=? name ""))
-          (error 'list_format_exeption "wrong formated list")]
+         [(not (number? id)) 
+          (error 'list_format_exeption "first element of list not a number")]
+         
+         [(not (string? name)) 
+          (error 'list_format_exeption "second element of list not a string")]
+         
+         [(string=? name "") 
+          (error 'list_format_exeption "second element of list is an empty string")]
+         
          [else 
           (make-student id name homework mid1 mid2 finallab)]))]))
 
 ;;===Tests: list->student===
 (check-expect (list->student peter)(make-student 4 "Peter Adam" (list (make-homework 1 3) (make-homework 2 4)) (make-mid-term 1 31) (make-mid-term 2 42) (make-final-lab 10 85)))
-(check-error (list->student peter-id-wrong) "list_format_exeption: wrong formated list")
-(check-error (list->student empty) "list_format_exeption: wrong formated list")
+(check-error (list->student peter-id-wrong) "list_format_exeption: first element of list not a number")
+(check-error (list->student empty) "list_format_exeption: wrong number of elements in list")
 
 
 ;;==========================================================================
@@ -106,22 +111,35 @@
     [(empty? lopons) empty]
     [else (local ((define pon (first lopons)) ;; pon: pair-of-number
                   (define rol (rest lopons))) ;; rol: rest-of-list
+            
             (cond
-              [(and (= (length pon) 2)
-                 (andmap number? pon)
-                 (andmap positive? pon)
-                 (not (member (first pon) (map first rol))))
-               (cons (make-homework (first pon)(second pon)) (parse-homework rol))
-               ]
-              [else (error 'list_format_exeption "wrong formated list")]))]))
+            
+              [(not (= (length pon) 2))
+               (error 'homwork_list_format_exeption "wrong number of elements")]
+              
+              [(not (andmap number? pon)) 
+               (error 'homwork_list_format_exeption "some elements are no numbers")]
+              
+              [(not (andmap positive? pon))
+               (error 'homwork_list_format_exeption "some numbers are negative")]
+              
+              [(member (first pon) (map first rol))
+               (error 'homwork_list_format_exeption "some homework id's are not unique")]
+              
+              [else 
+               (cons (make-homework (first pon)(second pon)) (parse-homework rol))]))]))
 
 ;;===Tests: parse-homework===
 (check-expect (parse-homework (list (list 1 2) (list 3 4)(list 5 6)))
               (list (make-homework 1 2)(make-homework 3 4)(make-homework 5 6)))
-(check-error (parse-homework (list (list 1 2 3))) "list_format_exeption: wrong formated list")
-(check-error (parse-homework (list (list 'a 3))) "list_format_exeption: wrong formated list")
-(check-error (parse-homework (list (list -1 -3))) "list_format_exeption: wrong formated list")
-(check-error (parse-homework (list (list 1 2)(list 1 3))) "list_format_exeption: wrong formated list")
+(check-error (parse-homework (list (list 1 2 3))) 
+             "homwork_list_format_exeption: wrong number of elements")
+(check-error (parse-homework (list (list 'a 3))) 
+             "homwork_list_format_exeption: some elements are no numbers")
+(check-error (parse-homework (list (list -1 -3))) 
+             "homwork_list_format_exeption: some numbers are negative")
+(check-error (parse-homework (list (list 1 2)(list 1 3))) 
+             "homwork_list_format_exeption: some homework id's are not unique")
 
 
 ;;==========================================================================

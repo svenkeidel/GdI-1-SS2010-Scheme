@@ -146,4 +146,3 @@
 ;; Example: (sort-list (list 5 3456 34 1 -356 32)) -> (list -356 1 5 32 34 3456)
 (define (sort-list lon)
   (read-tree (tree-insert-list lon empty)))
-
