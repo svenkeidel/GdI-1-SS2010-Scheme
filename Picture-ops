@@ -1,0 +1,127 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Picture-ops) (read-case-sensitive #t) (teachpacks ((lib "image.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.ss" "teachpack" "htdp")))))
+;;===Example structs===
+
+(define black-pixel (make-color 0 0 0))
+(define red-pixel (make-color 255 0 0))
+(define green-pixel (make-color 0 255 0))
+(define blue-pixel (make-color 0 0 255))
+(define white-pixel (make-color 255 255 255))
+(define mid-gray-pixel (make-color 85 85 85))
+
+
+;;==========================================================================
+;; Contract: brightness: color -> number
+;; Purpose: gives the brightness value of a color struct
+;; Example: (brightness (make-color 200 50 5) 85)
+(define (brightness pixel)
+  (/ 
+   (+ (color-red pixel) (color-green pixel) (color-blue pixel))
+   3))
+
+;;===Tests: brightness===
+(check-expect (brightness black-pixel) 0)
+(check-expect (brightness white-pixel) 255)
+(check-expect (brightness red-pixel) 85)
+
+
+;;==========================================================================
+;; Contract: average-pixel-color: color -> color
+;; Purpose: sets the brightness of a pixel for each R G B value of it
+;; Example: (average-pixel-color red-pixel) -> mid-gray-pixel
+(define (average-pixel-color pixel)
+  (local ((define bri (round (brightness pixel))))
+    (make-color bri bri bri)))
+
+;;===Tests: average-pixel-color===<
+(check-expect (average-pixel-color black-pixel) black-pixel)
+(check-expect (average-pixel-color white-pixel) white-pixel)
+(check-expect(average-pixel-color red-pixel) mid-gray-pixel)
+
+
+;; invert: color -> color
+;; 
+;;
+(define (invert pixel)
+  (local (;; Contract: f: number -> number
+          ;; Purpose: f(x)=-x + 255 for 0<=x<=255
+          (define (f x) (+ (- x) 255)) 
+          (define r (color-red pixel))
+          (define g (color-green pixel))
+          (define b (color-blue pixel)))
+    (make-color (f r) (f g) (f b))))
+
+;;===Tests: invert===
+(check-expect (invert black-pixel) white-pixel)
+(check-expect (invert white-pixel) black-pixel)
+(check-expect (invert mid-gray-pixel) (make-color 170 170 170))
+
+
+;;==========================================================================
+;; Contract: non-linear: color -> color
+;; Purpos: gives a non-linear color part of a color
+;;
+(define (non-linear pixel)
+  (local ((define R (color-red pixel))   ;; \
+          (define G (color-green pixel)) ;;  > old color values
+          (define B (color-blue pixel))  ;; /
+          (define X (+ (* R 7) (* G 3) (* B -7)))
+          (define normed (cond 
+                      [(> X 255) 255]
+                      [(< X 0) 0]
+                      [else X])))
+    (make-color normed normed normed)))
+
+;;===Tests: non-linear===
+(check-expect (non-linear black-pixel) black-pixel)
+(check-expect (non-linear white-pixel) white-pixel)
+(check-expect (non-linear red-pixel) white-pixel)
+(check-expect (non-linear (make-color 30 20 10)) (make-color 200 200 200))
+(check-expect (non-linear (make-color 10 20 30)) black-pixel)
+
+
+;;==========================================================================
+;; Contract: skewed-color: color -> color
+;; Purpose: red=max(r,g,b); 
+;;          green=arim-mid(r,g,b)
+;;          blue=min(r,g,b)
+;; (skewed-color (make-color 255 0 0)) -> (make-color 255 85 0)
+(define (skewed-color pixel)
+  (local ((define R (color-red pixel))   ;; \
+          (define G (color-green pixel)) ;;  > old color values
+          (define B (color-blue pixel))  ;; /
+          (define r (max R G B))             ;; \
+          (define g (round (/ (+ R G B) 3))) ;;  > new color values
+          (define b (min R G B)))            ;; /
+    (make-color r g b))) 
+
+;; Tests
+(check-expect (skewed-color black-pixel) black-pixel)
+(check-expect (skewed-color white-pixel) white-pixel)
+(check-expect (skewed-color red-pixel) (make-color 255 85 0))  ;; FF5500 -> an orange color tone
+(check-expect (skewed-color blue-pixel) (make-color 255 85 0))
+(check-expect (skewed-color green-pixel) (make-color 255 85 0))
+
+
+;;==========================================================================
+;; image-transform: image (listof (color -> color)) -> image
+;;
+;;
+(define (image-transform img functions)
+  (local ((define alocol ;; alocol: a-list-of-colors
+            (image->color-list img))
+          
+          (define w (image-width img))
+          
+          (define h (image-height img))
+          
+          (define converted-pixel-list 
+            (map 
+             (lambda (acol) 
+               (foldl (lambda (afun acol) (afun acol)) acol functions)) 
+             alocol))) ;; --end-of-local-definition-block
+  
+  (color-list->image converted-pixel-list w h 0 0)))
+           
+;; Tests
