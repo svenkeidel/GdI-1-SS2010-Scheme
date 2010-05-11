@@ -55,13 +55,13 @@
 
 
 ;;==========================================================================
-;; Contract: list->student: (listof X) -> student
-;; (listof X): (list [id: number]
-;;                   [name: string]
-;;                   [(list-of-homework): (listof (pairof numbers))]
-;;                   [mid-term1: mid-term]
-;;                   [mid-term2: mid-term]
-;;                   [finallab: final-lab])
+;; Contract: list->student: X -> student
+;;        X: (list [id: number]
+;;                 [name: string]
+;;                 [(list-of-homework): (listof (list number number))]
+;;                 [mid-term1: mid-term]
+;;                 [mid-term2: mid-term]
+;;                 [finallab: final-lab])
 ;; Purpose: turns a formated list into student-object
 ;; Example: (list->student 
 ;;      (list 4 "Peter Adam" (list (list 1 3) (list 2 4)) (list 1 31) (list 2 42) (list 10 85))))
@@ -102,7 +102,7 @@
 
 
 ;;==========================================================================
-;; Contract: parse-homework: (listof (pairof number number)) -> (listof homework)
+;; Contract: parse-homework: (listof (list number number)) -> (listof homework)
 ;; Purpose: parses the list of pairs of numbers to a list with homework-structs
 ;; Example: (parse-homework (list (list 1 2) (list 3 4)))
 ;;               -> (list (make-homework 1 2) (make-homework 3 4))
