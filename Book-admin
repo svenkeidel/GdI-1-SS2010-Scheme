@@ -49,7 +49,7 @@
 ;; Example: (count-genre-distribution some-books (list 'Fantasy ' SpecialistBook))
 ;;     -> (cons 1 (cons 2 empty))
 (define (count-genre-distribution lob genres)
-  (if (or (empty? lob) (empty? genres))
+  (if (empty? genres)
       empty
       (append 
        (cons (count-books-for-genre (first genres) lob) empty)
