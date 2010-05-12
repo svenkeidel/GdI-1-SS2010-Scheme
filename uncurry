@@ -1,9 +1,22 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname uncurry) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+;; multiply: number -> (number -> number)
+;; returns a funktion that takes a number as input and
+;; returns a the number multiplied by x
+(define (lambda_multiply x)
+  (lambda (y) (* x y)))
+;;=========================
+(define (local_multiply x)
+  (local ((define (mult y) (* x y)))
+    mult))
+
+(check-expect ((lambda_multiply 5) 6) 30)
+(check-expect ((local_multiply 7) 8) 56)
+
+
 ;; contract: uncurry: (X -> (Y -> Z)) -> (X Y -> Z)
 (define (uncurry X)
-  ((lambda (X Y) (Y)) X (X))
+  (((lambda (X1 Y1) (((X))) )) X (X)))
 
-(X):= (lambda (Y) Z)
-(Y):= Z
+(check-expect ((uncurry (lambda_multiply 7)) 8) (* 7 8))
