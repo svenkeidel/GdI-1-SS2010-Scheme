@@ -66,19 +66,21 @@
   (local ((define R (color-red pixel))   ;; \
           (define G (color-green pixel)) ;;  > old color values
           (define B (color-blue pixel))  ;; /
-          (define X (+ (* R 7) (* G 3) (* B -7)))
+          (define X (abs
+                     (round 
+                     (/ (+ (* R 7) (* G 3) (* B -7)) 
+                        3))))
           (define normed (cond 
-                      [(> X 255) 255]
-                      [(< X 0) 0]
-                      [else X])))
+                           [(> X 255) 255]
+                           [else X])))
     (make-color normed normed normed)))
 
 ;;===Tests: non-linear===
 (check-expect (non-linear black-pixel) black-pixel)
 (check-expect (non-linear white-pixel) white-pixel)
 (check-expect (non-linear red-pixel) white-pixel)
-(check-expect (non-linear (make-color 30 20 10)) (make-color 200 200 200))
-(check-expect (non-linear (make-color 10 20 30)) black-pixel)
+(check-expect (non-linear (make-color 30 20 10)) (make-color 67 67 67))
+(check-expect (non-linear (make-color 20 80 95)) (make-color 95 95 95))
 
 
 ;;==========================================================================
