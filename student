@@ -3,33 +3,33 @@
 #reader(lib "htdp-intermediate-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 ;;==========================================================================
 ;; homework: structure representing homework points
-;; nu: number − the number of the homework
-;; points: number − the number of points reached
+;; nu: number - the number of the homework
+;; points: number - the number of points reached
 (define-struct homework (nr points))
 
 
 ;;==========================================================================
 ;; mid-term: points in one of two mid-term exams
-;; nu: number − the number of the mid-term exam
-;; points: number − the number of points reached
+;; nu: number - the number of the mid-term exam
+;; points: number - the number of points reached
 (define-struct mid-term (nr points))
 
 
 ;;==========================================================================
 ;; final-lab: points in the final-lab
-;; group: number − the number of the student's group
-;; points: number − the number of points reached
+;; group: number - the number of the student's group
+;; points: number - the number of points reached
 (define-struct final-lab (group points))
 
 
 ;;==========================================================================
 ;; student: representing a CS 1 student
-;; id: number − unique ID of the student
-;; name: string − the name of the student
-;; hw: (listof homework) − the student’s homework(s)
-;; mid1: mid−term − the student’s result in mid−term A
-;; mid2: mid−term − the student’s result in mid−term B
-;; lab: final−lab − the student’s results in the finallab
+;; id: number - unique ID of the student
+;; name: string - the name of the student
+;; hw: (listof homework) - the student's homework(s)
+;; mid1: mid-term - the student's result in mid-term A
+;; mid2: mid-term - the student's result in mid-term B
+;; lab: final-lab - the student's results in the finallab
 (define-struct student (id name hw mid1 mid2 lab))
 
 
@@ -115,16 +115,16 @@
             (cond
             
               [(not (= (length pon) 2))
-               (error 'homwork_list_format_exeption "wrong number of elements")]
+               (error 'homework_list_format_exeption "wrong number of elements")]
               
               [(not (andmap number? pon)) 
-               (error 'homwork_list_format_exeption "some elements are no numbers")]
+               (error 'homework_list_format_exeption "some elements are no numbers")]
               
               [(not (andmap positive? pon))
-               (error 'homwork_list_format_exeption "some numbers are negative")]
+               (error 'homework_list_format_exeption "some numbers are negative")]
               
               [(member (first pon) (map first rol))
-               (error 'homwork_list_format_exeption "some homework id's are not unique")]
+               (error 'homework_list_format_exeption "some homework id's are not unique")]
               
               [else 
                (cons (make-homework (first pon)(second pon)) (parse-homework rol))]))]))
@@ -133,13 +133,13 @@
 (check-expect (parse-homework (list (list 1 2) (list 3 4)(list 5 6)))
               (list (make-homework 1 2)(make-homework 3 4)(make-homework 5 6)))
 (check-error (parse-homework (list (list 1 2 3))) 
-             "homwork_list_format_exeption: wrong number of elements")
+             "homework_list_format_exeption: wrong number of elements")
 (check-error (parse-homework (list (list 'a 3))) 
-             "homwork_list_format_exeption: some elements are no numbers")
+             "homework_list_format_exeption: some elements are no numbers")
 (check-error (parse-homework (list (list -1 -3))) 
-             "homwork_list_format_exeption: some numbers are negative")
+             "homework_list_format_exeption: some numbers are negative")
 (check-error (parse-homework (list (list 1 2)(list 1 3))) 
-             "homwork_list_format_exeption: some homework id's are not unique")
+             "homework_list_format_exeption: some homework id's are not unique")
 
 
 ;;==========================================================================

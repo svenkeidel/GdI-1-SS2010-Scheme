@@ -1,0 +1,90 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname SelectionSort) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;;==========================================================================
+;; selection-sort: (listof X) (X X -> Boolean) -> (listof X)
+;;    X: comparable - Elements wich can be compared with the comparator
+;; purpose: sort a list of comparable elements of the same type X
+;; example: (selection-sort (list 3 2 1 4) <) -> (list 1 2 3 4)
+(define (selection-sort alox comparator)
+  (cond
+    [(empty? alox) empty]
+    [else 
+     (local ((define compared-elem (list-compare alox comparator))
+             (define rest-list 
+               (rest 
+                (if (= (first alox) compared-elem) 
+                    alox
+                    (exchange-with-current alox (first alox) compared-elem)))))
+       (cons compared-elem (selection-sort rest-list comparator)))]))
+
+;;===Tests: selectio-sort===
+(check-expect (selection-sort empty <) empty)
+(check-expect (selection-sort '(1 7 5 1) >) '(7 5 1 1))
+(check-expect (selection-sort '(1 7 5 1) <) '(1 1 5 7))
+(check-expect (selection-sort (list 1 2 3 4 5) <) (list 1 2 3 4 5))
+(check-expect (selection-sort (list 1 2 3 4 5) >) (list 5 4 3 2 1))
+
+
+;;==========================================================================
+;; exchange-with-current: (listof number) number number -> (listof number)
+;; purpose: replace the third parameter with the element found in list
+;;          witch is equal to the second parameter, else return the list unchanged
+;; example: (exchange-with-current (list 1 2 3 4 5) 3 1) -> (list 1 2 1 4 5)
+(define (exchange-with-current alon current found-min)
+  (cond
+    [(empty? alon) empty]
+    [(= (first alon) found-min)
+     (cons current (rest alon))]
+    [else
+     (cons (first alon) 
+           (exchange-with-current (rest alon) current found-min))]))
+
+;;===Tests: exchange-with-current===
+(check-expect (exchange-with-current '(1 2 3 4 5) 42 2) '(1 42 3 4 5))
+(check-expect (exchange-with-current '(1 2 3 4 5) 42 1) '(42 2 3 4 5))
+(check-expect (exchange-with-current empty 42 1) empty)
+(check-expect (exchange-with-current (list 1 2 3 4 5) 42 6) (list 1 2 3 4 5))
+
+
+;;==========================================================================
+;; contract: list-compare: (listof X) (X X -> Boolean) -> X
+;;     X: comparable - Elements wich can be compared with the comparator
+;; purpose: return the extremum calculatet with the comparator
+;; example: (list-compare '(2 1 4 3) <) -> 1
+(define (list-compare alox comparator)
+  (cond
+    [(empty? alox) (error 'empty_list "no elements to compare")]
+    [else      
+     #| solution with local
+     (local ((define (local-list-comp alox comp-elem)
+               (cond 
+                 [(empty? alox) comp-elem]
+                 [else        
+                  (local-list-comp (rest alox)
+                             (if (comparator (first alox) comp-elem)
+                                 (first alox)
+                                 comp-elem))])))
+       (local-list-comp alox (first alox)))
+     end-local |#
+       (list-comp alox comparator (first alox))
+       ]))
+;; contract: list-comp: (listof number) (number number -> Boolean) number -> number
+;; purpose: helper-procedure for list-compare (should be local ^^)
+(define (list-comp alox comparator comp-elem)
+  (cond
+    [(empty? alox) comp-elem]
+    [else 
+     (list-comp (rest alox) 
+                comparator 
+                (if (comparator (first alox) comp-elem)
+                    (first alox)
+                    comp-elem))]))
+
+;;===Tests: list-compare===
+(check-expect (list-compare '(1 8 3 2 4) <) 1)
+(check-expect (list-compare '(11 8 23 12 4) <) 4)
+(check-expect (list-compare '(1 8 3 2 4) >) 8)
+(check-error (list-compare empty >) "empty_list: no elements to compare")
+(check-expect (list-compare (list 1) <) 1)
+(check-expect (list-compare (list 2 1 2 3) >) 3)
