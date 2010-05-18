@@ -40,13 +40,13 @@
 (check-expect(average-pixel-color red-pixel) mid-gray-pixel)
 
 
-;; invert: color -> color
-;; 
-;;
+;; contract: invert: color -> color
+;; purpose: invert the RGB values of a pixel
+;; example: (invert (make-color 0 100 255)) -> (make-color 255 155 0)
 (define (invert pixel)
-  (local (;; Contract: f: number -> number
+  (local (;; Contract: f: integer -> integer
           ;; Purpose: f(x)=-x + 255 for 0<=x<=255
-          (define (f x) (+ (- x) 255)) 
+          (define (f x) (+ (- (round x)) 255))
           (define r (color-red pixel))
           (define g (color-green pixel))
           (define b (color-blue pixel)))
@@ -61,7 +61,7 @@
 ;;==========================================================================
 ;; Contract: non-linear: color -> color
 ;; Purpos: gives a non-linear color part of a color
-;;
+;; Example: (non-linear (make-color 10 20 30)) -> (make-color 27 27 27)
 (define (non-linear pixel)
   (local ((define R (color-red pixel))   ;; \
           (define G (color-green pixel)) ;;  > old color values
@@ -107,9 +107,8 @@
 
 
 ;;==========================================================================
-;; image-transform: image (listof (color -> color)) -> image
-;;
-;;
+;; contract: image-transform: (listof color) (listof (color -> color)) -> image
+;; purpose: calculates a list of color-functions on each pixel of the color list
 (define (image-transform img functions)
   (local ((define alocol ;; alocol: a-list-of-colors
             (image->color-list img))

@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-intermediate-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
 ;;==========================================================================
 ;; homework: structure representing homework points
 ;; nu: number - the number of the homework
@@ -52,6 +52,9 @@
                (list 10 85))) ;; finallab
 
 (define hans (make-student 3 "Hans Wurst" (list (make-homework 1 23) (make-homework 2 27) (make-homework 3 55)) (make-mid-term 1 80) (make-mid-term 2 20) (make-final-lab 10 100)))
+(define dieter (make-student 4 "Dieter XYZ" (list (make-homework 1 -100) (make-homework 2 27) (make-homework 3 55)) (make-mid-term 1 80) (make-mid-term 2 20) (make-final-lab 10 100)))
+(define max_m (make-student 5 "Max Mustermann" (list (make-homework 1 23) (make-homework 2 27)) (make-mid-term 1 999) (make-mid-term 2 -20) (make-final-lab 10 100)))
+(define bob (make-student 6 "Bob" (list (make-homework 1 23) (make-homework 2 27) (make-homework 3 10)) (make-mid-term 1 55) (make-mid-term 2 20) (make-final-lab 10 0)))
 
 
 ;;==========================================================================
@@ -73,7 +76,8 @@
 ;;                        (make-mid-term 2 42)
 ;;                        (make-final-lab 10 85))))
 (define (list->student lfs) ;; lfs: list-for-student
-  (cond 
+  (cond
+    [(empty? lfs) empty]
     [(not (= (length lfs) 6)) (error 'list_format_exeption "wrong number of elements in list")]
     [else 
      (local ((define id (first lfs))
@@ -98,7 +102,7 @@
 ;;===Tests: list->student===
 (check-expect (list->student peter)(make-student 4 "Peter Adam" (list (make-homework 1 3) (make-homework 2 4)) (make-mid-term 1 31) (make-mid-term 2 42) (make-final-lab 10 85)))
 (check-error (list->student peter-id-wrong) "list_format_exeption: first element of list not a number")
-(check-error (list->student empty) "list_format_exeption: wrong number of elements in list")
+(check-expect (list->student empty) empty)
 
 
 ;;==========================================================================
@@ -208,6 +212,133 @@
 ;;===Tests: passed?===
 (check-expect (passed? (list->student peter)) false)
 (check-expect (passed? hans) true)
+
+
+;;==========================================================================
+;; contract: valid?: student -> Boolean
+;; purpose: tests wether the results of a student are valid
+(define (valid? student)
+  (local ((define sum-hw (sum-homework (student-hw student)))
+          (define mid1-points (mid-term-points (student-mid1 student)))
+          (define mid2-points (mid-term-points (student-mid2 student)))
+          (define lab-points (final-lab-points (student-lab student))))
+    (cond
+      [(and
+        (>= sum-hw 0)
+        (<= sum-hw 100)
+        (>= mid1-points 0)
+        (<= mid1-points 100)
+        (>= mid2-points 0)
+        (<= mid2-points 100)
+        (xor
+         (= lab-points 0)
+         (and
+          (>= lab-points 50)
+          (<= lab-points 145))))
+       true]
+      [else false])))
+
+;;===Tests: valid?===
+(check-expect (valid? hans) false) ;; sum of homework to high
+(check-expect (valid? dieter) false) ;; negative homework-sum value
+(check-expect (valid? max_m) false) ;; mid-term points to high
+(check-expect (valid? bob) true) ;; should be valid
+
+
+;;==========================================================================
+;; contract: points-for-student: student -> number
+;; purpose: calculates the reached points for a student
+(define (points-for-student student)
+  (local ((define sum-hw (sum-homework (student-hw student)))
+          (define mid1-points (mid-term-points (student-mid1 student)))
+          (define mid2-points (mid-term-points (student-mid2 student)))
+          (define lab-points (final-lab-points (student-lab student)))
+          (define reached-points
+            (+ sum-hw
+               (if (>= mid1-points mid2-points) 
+                   mid1-points
+                   mid2-points)
+               lab-points)))
+    reached-points))
+
+;;===Tests: points-for-student===
+(check-expect (points-for-student hans) 285)
+(check-expect (points-for-student bob) 115)
+
+
+;;==========================================================================
+;; contract: students->point-list: (listof student) -> (listof number)
+;; purpose: calculates the points for each student in the list
+(define (students->point-list los) ;; los: list-of-students
+  (cond
+    [(empty? los) empty]
+    [else 
+     (map 
+      (lambda (astudent) 
+        (points-for-student astudent)) 
+      los)]))
+  
+;;===Tests: students->point-list===
+(check-expect (students->point-list (list hans dieter max_m bob)) 
+              (list 285 162 1149 115))
+(check-expect (students->point-list empty) empty)
+
+
+;;==========================================================================
+;; contract: point-dist: (listof number) -> (listof (list number number))
+;; purpose: akkumulate the apperance of a number in list
+;; example: (point-dist (list 3 2 1 2 3)) -> (list '(3 2) '(2 2) '(1 1))
+(define (point-dist lon) ;; lon: list-of-numbers
+  (local 
+    ((define rl empty) ;; el: result-list
+     
+     ;; contract: exists: number -> Boolean
+     ;; purpose: returns true if the number already exist in the nested part of the rl
+     (define (exists? a-number lopon)
+       (cond
+         [(empty? lopon) false]
+         [else 
+          (ormap 
+           (lambda (a-pon) (= (first a-pon) a-number)) 
+           lopon)]))
+     
+     ;; contract: succ: number -> void
+     (define (succ a-number lopon)
+       (map 
+        (lambda (a-pon) 
+          (if (= (first a-pon) a-number)
+              (list (first a-pon) (+ (second a-pon) 1))
+              a-pon)) 
+        lopon)))
+     ;;===end of local-def block===
+    
+    (for-each 
+     (lambda (a-number)
+            (if (exists? a-number rl)
+                (succ a-number)
+                (append rl (list a-number 1))))
+     lon)))
+
+;;===Tests: point-dist===
+;;(check-expect (point-dist (list 1 2 1 2 5 4 3)) (list (1 )))
+
+
+;;==========================================================================
+;; contract: xor: boolean boolean -> boolean
+;; purpose: evaluates the result of an exclusive or expression
+;; bitmap:   xor|1 0
+;;             =====
+;;             1|0 1
+;;             0|1 0
+(define (xor X Y) (or  ;; why the hell there is no buildin xor in plt-scheme ^^
+               (and X (not Y))
+               (and (not X) Y)))
+
+;;===Tests: xor===
+(check-expect (xor #t #t) #f)
+(check-expect (xor #t #f) #t)
+(check-expect (xor #f #t) #t)
+(check-expect (xor #f #f) #f)
 
 
 ;;==========================================================================
