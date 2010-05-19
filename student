@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-advanced-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname student) (read-case-sensitive #t) (teachpacks ((lib "draw.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "draw.ss" "teachpack" "htdp")))))
 ;;==========================================================================
 ;; homework: structure representing homework points
 ;; nu: number - the number of the homework
@@ -274,13 +274,12 @@
     [(empty? los) empty]
     [else 
      (map 
-      (lambda (astudent) 
+      (lambda (astudent)
         (points-for-student astudent)) 
-      los)]))
+      (filter valid? los))]))
   
 ;;===Tests: students->point-list===
-(check-expect (students->point-list (list hans dieter max_m bob)) 
-              (list 285 162 1149 115))
+(check-expect (students->point-list (list hans dieter max_m bob)) (list 115))
 (check-expect (students->point-list empty) empty)
 
 
@@ -289,38 +288,158 @@
 ;; purpose: akkumulate the apperance of a number in list
 ;; example: (point-dist (list 3 2 1 2 3)) -> (list '(3 2) '(2 2) '(1 1))
 (define (point-dist lon) ;; lon: list-of-numbers
-  (local 
-    ((define rl empty) ;; el: result-list
-     
-     ;; contract: exists: number -> Boolean
-     ;; purpose: returns true if the number already exist in the nested part of the rl
-     (define (exists? a-number lopon)
-       (cond
-         [(empty? lopon) false]
-         [else 
-          (ormap 
-           (lambda (a-pon) (= (first a-pon) a-number)) 
-           lopon)]))
-     
-     ;; contract: succ: number -> void
-     (define (succ a-number lopon)
-       (map 
-        (lambda (a-pon) 
-          (if (= (first a-pon) a-number)
-              (list (first a-pon) (+ (second a-pon) 1))
-              a-pon)) 
-        lopon)))
-     ;;===end of local-def block===
-    
-    (for-each 
-     (lambda (a-number)
-            (if (exists? a-number rl)
-                (succ a-number)
-                (append rl (list a-number 1))))
-     lon)))
+  (cond
+    [(empty? lon) empty]
+    [else 
+     (local 
+       ((define current (first lon))
+        (define (count-amount a-number lon)
+          (cond
+            [(empty? lon) 0]
+            [else (if (= a-number (first lon))
+                      (+ 1 (count-amount current (rest lon)))
+                      (+ 0 (count-amount current (rest lon))))])))
+       ;;===end of local-def block===
+       
+       (cons 
+        (list current (count-amount current lon))
+        (point-dist
+         (filter ;; remove current from list
+          (lambda (a-number) (not (= current a-number))) 
+          lon)
+         )))]))
 
 ;;===Tests: point-dist===
-;;(check-expect (point-dist (list 1 2 1 2 5 4 3)) (list (1 )))
+(check-expect (point-dist (list 1 2 1 1 1 1 3 2 4)) (list '(1 5) '(2 2) '(3 1) '(4 1)))
+(check-expect (point-dist empty) empty)
+
+
+;;==========================================================================
+;; contract: render-point-dist: (listof (list number number)) -> true
+;; purpose: draw a statistic of the spread of points
+(define (render-point-dist pd)
+  (local ((define ox 40) (define oy 40)
+          (define sx 5)  (define sy 10)
+          (define dx 5) (define dy 10)
+          (define mx 30)(define my 30)
+          (define orig-x ox)
+          (define orig-y (+ (* my sy) oy))
+          (define mu 20))
+    (begin 
+      (create-grid ox oy sx sy dx dy mx my mu)
+      (map
+       (lambda (pon)
+         (local ((define x (+ orig-x (* (first pon) sx)))
+                 (define y (- orig-y (* (second pon) sy))))
+           (draw-solid-line (make-posn x orig-y)
+                            (make-posn x y)
+                            'black))) pd))))
+
+;;==========================================================================
+;; contract: create-grid: N N N N N N N N N -> true
+;;        N: number
+;; purpose: creates a grid with a x and y axis and ticks
+(define (create-grid ox oy sx sy dx dy mx my mu)
+  (local
+    (;; how many ticks shall be drawn?
+     (define MAX-UNITS mu)
+     ;; what is the maximum x value?
+     (define MAX-X-VALUE mx)
+     ;; what is the maximum y value?
+     (define MAX-Y-VALUE my)
+
+     ;; define the x and y offsets to make sure
+     ;; that the labels do not stick to the window border
+     (define offset-x ox)
+     (define offset-y oy)
+
+     ;; define the point spread
+     ;; e.g., 1 means: 1 unit = 1 pixel distance;
+     ;; 2 means 1 unit = 2 pixels distance
+     ;; Example: for x between 0 and 300,
+     ;; - spread-x = 1 means: x=0 is at 0+offset-x, x=1 at 1+offset-x
+     ;; - spread-x = 10 means: x=0 is at 0+offset-x, x=10 at 100+offset-x
+     (define spread-x sx)
+     (define spread-y sy)
+
+     ;; define the window dimensions, taking into account
+     ;; the range of x and y and their spread factor
+     (define BASE-WIDTH  (* MAX-X-VALUE spread-x))
+     (define BASE-HEIGHT (* MAX-Y-VALUE spread-y))
+     
+     ;; define the "point of origin" for the grid
+     (define origin (make-posn offset-x (+ BASE-HEIGHT offset-y)))
+     
+     ;; draw-ticks: number number -> true
+     ;; draws the grid
+     (define (draw-ticks step-x step-y)
+       (local 
+         (
+          ;; draw-single-tick: number number symbol number -> true
+          ;; draws the single tick with value val at (x, y) for the axis
+          (define (draw-single-tick x y axis val)
+            (local
+              ((define half-x-offset (/ offset-x 2))
+               (define half-y-offset (/ offset-y 2))
+               (define new-x (if (symbol=? axis 'x) x (- x half-x-offset)))
+               (define text-x (- new-x 10))
+               (define new-y (if (symbol=? axis 'x) (+ y half-y-offset) y))
+               (define text-y (if (symbol=? axis 'x) (+ new-y 10) new-y)))
+              (begin
+                (draw-solid-line 
+                 (make-posn x y)
+                 (make-posn new-x new-y) 
+                 'red)
+                (draw-solid-string
+                 (make-posn text-x text-y)
+                 (number->string val)))))
+          (define (draw-all-ticks current)
+            (local
+              ((define x-val (* current step-x spread-x))
+               (define y-val (* current step-y spread-y))
+               (define x-done (> (* current step-x) MAX-X-VALUE))
+               (define y-done (> (* current step-y) MAX-Y-VALUE)))
+              (if (and x-done y-done)
+                  true
+                  (begin
+                    (if x-done ;<= (* current step-x) MAX-X-VALUE)
+                        true
+                        (draw-single-tick (+ offset-x x-val)
+                                          (+ BASE-HEIGHT offset-y)
+                                          'x
+                                          x-val))
+                    (if y-done ;> (* current step-y) MAX-Y-VALUE)
+                        true
+                        (draw-single-tick offset-x
+                                          (- (+ BASE-HEIGHT offset-y) y-val)
+                                          'y
+                                          (* current step-y)))
+                    (draw-all-ticks (+ current 1))) ;; end of "begin"
+                  ))
+            ) ;; end of "draw-all-ticks"
+          ) ;; end of "local definitions"
+         (draw-all-ticks 0)))
+     )
+    (begin
+      ;; create the drawing window
+      (start (+ BASE-WIDTH offset-x offset-x)
+             (+ BASE-HEIGHT offset-y offset-y))
+
+      ;; draw the X axis
+      (draw-solid-line 
+       origin
+       (make-posn (+ BASE-WIDTH offset-x) (posn-y origin)) 'red)
+      
+      ;; draw the Y axis
+      (draw-solid-line
+       origin
+       (make-posn offset-x offset-y) 'red)
+
+      ;; draw a concrete grid, here with a new x tick for each 20 values
+      ;; and a y tick for every 2 values.
+      ;; E.g., if x goes from 0 to 300, we will have ticks at 0, 20, 40,
+      ;; 60, ..., 280, 300, and for y in 0..50, we will have 0, 2, 4, ..., 50
+      (draw-ticks dx dy))))
 
 
 ;;==========================================================================
