@@ -100,9 +100,9 @@
           (make-student id name homework mid1 mid2 finallab)]))]))
 
 ;;===Tests: list->student===
-(check-expect (list->student peter)(make-student 4 "Peter Adam" (list (make-homework 1 3) (make-homework 2 4)) (make-mid-term 1 31) (make-mid-term 2 42) (make-final-lab 10 85)))
-(check-error (list->student peter-id-wrong) "list_format_exeption: first element of list not a number")
-(check-expect (list->student empty) empty)
+;;(check-expect (list->student peter)(make-student 4 "Peter Adam" (list (make-homework 1 3) (make-homework 2 4)) (make-mid-term 1 31) (make-mid-term 2 42) (make-final-lab 10 85)))
+;;(check-error (list->student peter-id-wrong) "list_format_exeption: first element of list not a number")
+;;(check-expect (list->student empty) empty)
 
 
 ;;==========================================================================
@@ -317,16 +317,20 @@
 ;;==========================================================================
 ;; contract: render-point-dist: (listof (list number number)) -> true
 ;; purpose: draw a statistic of the spread of points
-(define (render-point-dist pd)
+(define (render-point-dist pd) ;; pd - point-distribution
   (local ((define ox 40) (define oy 40)
-          (define sx 5)  (define sy 10)
-          (define dx 5) (define dy 10)
-          (define mx 30)(define my 30)
+          (define mx (first (argmax first pd)))
+          (define my (second (argmax second pd)))
+          (define window-width 300) ;; could be a parameter of render-point-dist
+          (define window-height 300) ;; could be a parameter of render-point-dist
+          (define sx (/ window-width mx)) 
+          (define sy (/ window-height my))
+          (define dx (round (/ mx 5))) ;; 5 ticks on x-axis
+          (define dy (round (/ my 5))) ;; 5 ticks on y-axis
           (define orig-x ox)
-          (define orig-y (+ (* my sy) oy))
-          (define mu 20))
+          (define orig-y (+ (* my sy) oy)))
     (begin 
-      (create-grid ox oy sx sy dx dy mx my mu)
+      (create-grid ox oy sx sy dx dy mx my)
       (map
        (lambda (pon)
          (local ((define x (+ orig-x (* (first pon) sx)))
@@ -335,17 +339,24 @@
                             (make-posn x y)
                             'black))) pd))))
 
+
+;;===Tests: render-point-dist===
+(define pointspread (list '(50 10) '(60 5) '(70 43) '(80 1) '(90 5) '(100 1) '(150 222)))
+
+
 ;;==========================================================================
-;; contract: create-grid: N N N N N N N N N -> true
+;; contract: create-grid: N N N N N N N N -> true
 ;;        N: number
+;;   ox, oy: number - offset-x, offset-y, the distance of the contents from the window border
+;;   sx, sy: number - spread-x, spread-y, defines how many pixel are one unit
+;;   dx, dy: number - delta-x,  delta-y,  defines after how many units shall be drawn a lable
+;;   mx, my: number - max-x,    max-y,    defines what is the maximum value at one axis
 ;; purpose: creates a grid with a x and y axis and ticks
-(define (create-grid ox oy sx sy dx dy mx my mu)
+;; Example: (create-grid 40 40 10 10 5 5 30 30)
+(define (create-grid ox oy sx sy dx dy mx my)
   (local
-    (;; how many ticks shall be drawn?
-     (define MAX-UNITS mu)
-     ;; what is the maximum x value?
+    (
      (define MAX-X-VALUE mx)
-     ;; what is the maximum y value?
      (define MAX-Y-VALUE my)
 
      ;; define the x and y offsets to make sure
@@ -377,7 +388,7 @@
          (
           ;; draw-single-tick: number number symbol number -> true
           ;; draws the single tick with value val at (x, y) for the axis
-          (define (draw-single-tick x y axis val)
+          (define (draw-single-tick x y axis val lable-txt)
             (local
               ((define half-x-offset (/ offset-x 2))
                (define half-y-offset (/ offset-y 2))
@@ -392,11 +403,13 @@
                  'red)
                 (draw-solid-string
                  (make-posn text-x text-y)
-                 (number->string val)))))
+                 (number->string lable-txt)))))
           (define (draw-all-ticks current)
             (local
               ((define x-val (* current step-x spread-x))
+               (define x-lable-txt (* current step-x))
                (define y-val (* current step-y spread-y))
+               (define y-lable-txt (* current step-y))
                (define x-done (> (* current step-x) MAX-X-VALUE))
                (define y-done (> (* current step-y) MAX-Y-VALUE)))
               (if (and x-done y-done)
@@ -407,13 +420,15 @@
                         (draw-single-tick (+ offset-x x-val)
                                           (+ BASE-HEIGHT offset-y)
                                           'x
-                                          x-val))
+                                          x-val
+                                          x-lable-txt))
                     (if y-done ;> (* current step-y) MAX-Y-VALUE)
                         true
                         (draw-single-tick offset-x
                                           (- (+ BASE-HEIGHT offset-y) y-val)
                                           'y
-                                          (* current step-y)))
+                                          (* current step-y)
+                                          y-lable-txt))
                     (draw-all-ticks (+ current 1))) ;; end of "begin"
                   ))
             ) ;; end of "draw-all-ticks"
