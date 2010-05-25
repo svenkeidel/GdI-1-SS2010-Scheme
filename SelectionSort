@@ -27,14 +27,15 @@
 
 
 ;;==========================================================================
-;; exchange-with-current: (listof number) number number -> (listof number)
+;; contract: exchange-with-current: (listof X) X X -> (listof number)
+;;       X: comparable - Elements wich can be compared with the comparator
 ;; purpose: replace the third parameter with the element found in list
 ;;          witch is equal to the second parameter, else return the list unchanged
 ;; example: (exchange-with-current (list 1 2 3 4 5) 3 1) -> (list 1 2 1 4 5)
 (define (exchange-with-current alon current found-min)
   (cond
     [(empty? alon) empty]
-    [(= (first alon) found-min)
+    [(equal? (first alon) found-min)
      (cons current (rest alon))]
     [else
      (cons (first alon) 

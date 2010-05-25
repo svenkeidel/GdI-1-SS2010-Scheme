@@ -275,7 +275,9 @@
     [else 
      (map 
       (lambda (astudent)
-        (points-for-student astudent)) 
+        (if (valid? astudent) 
+            (points-for-student astudent)
+        empty))
       (filter valid? los))]))
   
 ;;===Tests: students->point-list===
@@ -319,8 +321,8 @@
 ;; purpose: draw a statistic of the spread of points
 (define (render-point-dist pd) ;; pd - point-distribution
   (local ((define ox 40) (define oy 40)
-          (define mx (first (argmax first pd)))
-          (define my (second (argmax second pd)))
+          (define mx (+ 10 (first (argmax first pd))))
+          (define my (+ 10 (second (argmax second pd))))
           (define window-width 300) ;; could be a parameter of render-point-dist
           (define window-height 300) ;; could be a parameter of render-point-dist
           (define sx (/ window-width mx)) 
@@ -331,17 +333,17 @@
           (define orig-y (+ (* my sy) oy)))
     (begin 
       (create-grid ox oy sx sy dx dy mx my)
-      (map
+      (first (map
        (lambda (pon)
          (local ((define x (+ orig-x (* (first pon) sx)))
                  (define y (- orig-y (* (second pon) sy))))
            (draw-solid-line (make-posn x orig-y)
                             (make-posn x y)
-                            'black))) pd))))
+                            'black))) pd)))))
 
 
 ;;===Tests: render-point-dist===
-(define pointspread (list '(50 10) '(60 5) '(70 43) '(80 1) '(90 5) '(100 1) '(150 222)))
+(define pointspread (build-list 50 (lambda (x) (list (random 300) (random 10)))))
 
 
 ;;==========================================================================
