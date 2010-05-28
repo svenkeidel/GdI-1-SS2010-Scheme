@@ -1,0 +1,98 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname football_transfer) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;;==========================================================================
+;; player represents a soccer player
+;; name: string - the name of the soccer player
+;; stamina: number - the stamina of the player
+;; speed: number - the speed (running or reflexes)
+;; accuracy: number - of shots, passes, or saves
+;; price: number - needed to transfer the player
+(define-struct player (name stamina speed accuracy price))
+
+;;==========================================================================
+;; value represents the value of a player,
+;; as determined by some appropriate function
+;; vplayer: player - the player structure
+;; score: number - the rating for the player
+(define-struct value (vplayer score))
+
+
+;;===Example players===
+(define ar (make-player "Alexander Reibold" 71 71 70 25000))
+(define ea (make-player "Echendu Adiele" 75 72 76 175000))
+(define bs (make-player "Bastian Schweinsteiger" 88 85 91 3200000))
+(define ab (make-player "Andreas Baufeldt" 74 75 71 180000))
+
+;;===Example list of players===
+(define my-players (list ar ea bs ab))
+
+
+;;==========================================================================
+;; contract: player->value: player (player -> number) -> value
+;; purpose: calculates the profit of a player
+;; example: (player->value (make-player "Echendu Adiele" 75 72 76 175000) player-stamina) 
+;;          -> (make-value (make-player "Echendu Adiele" 75 72 76 175000) 75)
+(define (player->value a-player eval-fun)
+  (make-value a-player (eval-fun a-player)))
+
+;;===Tests: player->value===
+;;(check-expect (player->value ar player-stamina) (make-value ar 71))
+;;(check-expect (player->value ea player-speed) (make-value ea 72))
+
+;;==========================================================================
+;; contract: value-sum: (listof player) (player -> number) -> number
+;; purpose: summarize the a specific atribiute of a list of players
+;; example: 
+(define (value-sum player-list eval-fun)
+  (foldl (lambda (a-player akku) (+ akku (eval-fun a-player))) 0 player-list))
+
+;; Tests
+;;(check-expect (value-sum my-players player-stamina) 308)
+;;(check-expect (value-sum my-players player-speed) 303)
+
+
+;;==========================================================================
+;;
+;; 
+;;
+(define (find-best-players players max-cost eval-fun)
+  (local
+    (
+     (define cheap-players 
+       (filter (lambda (a-player) 
+                 (< (player-price a-player) max-cost)) 
+               players))
+     
+     (define best-solution empty)
+     
+     (define (find-best players erg-list)
+       (local
+         ((define erg-price (value-sum erg-list player-price))
+          (define erg-value (value-sum erg-list eval-fun))
+          (define sol-value (value-sum best-solution eval-fun)))
+         (cond
+           [(empty? players) empty]
+           [(< erg-price max-cost)
+            (foldl (lambda (a-player restof-players)
+                     (begin
+                       (cond [(>= erg-value sol-value) (set! best-solution erg-list)])
+                       (find-best restof-players (append erg-list (list a-player)))
+                       (rest players)))
+                   empty players)]
+           [else empty]))))
+    best-solution
+    ))
+
+;; Tests
+
+;; The following tests should be passed
+#|(check-expect (find-best-players my-players 210000 player-speed) (list ar ab))
+(check-expect (find-best-players my-players 210000 player-stamina) (list ar ea))
+(check-expect (find-best-players my-players 210000 player-accuracy) (list ar ea))
+(check-expect (find-best-players my-players 360000 player-speed) (list ea ab))
+(check-expect (find-best-players my-players 350000 player-stamina) (list ar ea))
+(check-expect (find-best-players my-players 340000 player-accuracy) (list ar ea))
+(check-expect (find-best-players my-players 400000 player-speed) (list ar ea ab))|#
+;;(check-expect (find-best-players my-players 400000 player-stamina) (list ar ea ab))
+;;(check-expect (find-best-players my-players 400000 player-accuracy) (list ar ea ab))

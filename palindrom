@@ -1,0 +1,50 @@
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname palindrom) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ())))
+;;==========================================================================
+;; contract: palindrom-last: (listof X) -> (listof X)
+;; purpose: mirrors the list at the last element of it
+;; example: (palindrom (list 1 2 3)) -> (list 1 2 3 2 1)
+(define (palindrom-last lox)
+  (cond [(empty? lox) empty]
+        [else 
+         (append lox (rest (foldl cons empty lox)))]))
+
+;;===Tests: palindrom===
+(check-expect (palindrom-last '(1 3 2 4)) '(1 3 2 4 2 3 1))
+(check-expect (palindrom-last '(1)) '(1))
+(check-expect (palindrom-last empty) empty)
+
+
+
+;;==========================================================================
+;; contract: palindrom-end: (listof X) -> (listof X)
+;; purpose: mirrors the list after the last element of it
+;; example: (palindrom (list 1 2 3)) -> (list 1 2 3 3 2 1)
+(define (palindrom-end lox)
+  (cond [(empty? lox) empty]
+        [else 
+         (append lox (foldl cons empty lox))]))
+
+;;===Tests: palindrom===
+(check-expect (palindrom-end '(1 3 2 4)) '(1 3 2 4 4 2 3 1))
+(check-expect (palindrom-end '(1)) '(1 1))
+(check-expect (palindrom-end empty) empty)
+
+
+;;==========================================================================
+;; contract: double-palindrom: (listof X) -> (listof X)
+;; purpose: doubles each element of a list and mirrors it at the last element
+;; example: (double-palindrom (list 1 2 3)) -> (list 1 1 2 2 3 3 2 2 1 1)
+(define (double-palindrom lox)
+  (cond [(empty? lox) empty]
+        [else 
+         (local
+           ((define (append-double x y) (append y (list x) (list x))))
+         (append 
+          (foldl append-double empty lox)
+          (rest (rest (foldr append-double empty lox)))))]))
+
+(check-expect (double-palindrom '(1 3 2 4)) '(1 1 3 3 2 2 4 4 2 2 3 3 1 1))
+(check-expect (double-palindrom '(1)) '(1 1))
+(check-expect (double-palindrom empty) empty)
