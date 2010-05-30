@@ -37,8 +37,8 @@
   (make-value a-player (eval-fun a-player)))
 
 ;;===Tests: player->value===
-;;(check-expect (player->value ar player-stamina) (make-value ar 71))
-;;(check-expect (player->value ea player-speed) (make-value ea 72))
+(check-expect (player->value ar player-stamina) (make-value ar 71))
+(check-expect (player->value ea player-speed) (make-value ea 72))
 
 ;;==========================================================================
 ;; contract: value-sum: (listof player) (player -> number) -> number
@@ -48,14 +48,13 @@
   (foldl (lambda (a-player akku) (+ akku (eval-fun a-player))) 0 player-list))
 
 ;; Tests
-;;(check-expect (value-sum my-players player-stamina) 308)
-;;(check-expect (value-sum my-players player-speed) 303)
+(check-expect (value-sum my-players player-stamina) 308)
+(check-expect (value-sum my-players player-speed) 303)
 
 
 ;;==========================================================================
-;;
-;; 
-;;
+;; contract: find-best-players: (listof player) number (player -> number) -> (listof player)
+;; purpose: find the best combination of players for a specific attribuite
 (define (find-best-players players max-cost eval-fun)
   (local
     (
@@ -64,35 +63,40 @@
                  (< (player-price a-player) max-cost)) 
                players))
      
-     (define best-solution empty)
-     
+     ;; contract: find-best: (listof player) (listof player) -> (listof (listof player))
+     ;; purpose: find possible solutions of combinations of players
      (define (find-best players erg-list)
        (local
          ((define erg-price (value-sum erg-list player-price))
-          (define erg-value (value-sum erg-list eval-fun))
-          (define sol-value (value-sum best-solution eval-fun)))
+          (define iter-players players)) ;; needed to iterate over the player in the foldl function
          (cond
-           [(empty? players) empty]
-           [(< erg-price max-cost)
-            (foldl (lambda (a-player restof-players)
-                     (begin
-                       (cond [(>= erg-value sol-value) (set! best-solution erg-list)])
-                       (find-best restof-players (append erg-list (list a-player)))
-                       (rest players)))
+           [(and (empty? players) (< erg-price max-cost)) (list erg-list)]
+           [(< erg-price max-cost)            
+            (foldl (lambda (a-player akku)
+                     (begin0
+                       (append
+                        akku
+                        (list erg-list)
+                        (find-best (rest iter-players) (append erg-list (list a-player))))
+                     (set! iter-players (rest iter-players)))) ;; keine ahnung wie man die aufgabe ohne set lösen kann ...
                    empty players)]
-           [else empty]))))
-    best-solution
+           [else empty])))
+     
+     (define possible-solutions (find-best cheap-players empty))
+     
+     (define best-solution 
+       (argmax (lambda (a-solution) (value-sum a-solution eval-fun)) possible-solutions))) ;;===endof-local-define-block===
+    
+    best-solution ;; return value
     ))
 
-;; Tests
-
 ;; The following tests should be passed
-#|(check-expect (find-best-players my-players 210000 player-speed) (list ar ab))
+(check-expect (find-best-players my-players 210000 player-speed) (list ar ab))
 (check-expect (find-best-players my-players 210000 player-stamina) (list ar ea))
 (check-expect (find-best-players my-players 210000 player-accuracy) (list ar ea))
 (check-expect (find-best-players my-players 360000 player-speed) (list ea ab))
 (check-expect (find-best-players my-players 350000 player-stamina) (list ar ea))
 (check-expect (find-best-players my-players 340000 player-accuracy) (list ar ea))
-(check-expect (find-best-players my-players 400000 player-speed) (list ar ea ab))|#
-;;(check-expect (find-best-players my-players 400000 player-stamina) (list ar ea ab))
-;;(check-expect (find-best-players my-players 400000 player-accuracy) (list ar ea ab))
+(check-expect (find-best-players my-players 400000 player-speed) (list ar ea ab))
+(check-expect (find-best-players my-players 400000 player-stamina) (list ar ea ab))
+(check-expect (find-best-players my-players 400000 player-accuracy) (list ar ea ab))
