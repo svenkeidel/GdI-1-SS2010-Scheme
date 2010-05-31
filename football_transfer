@@ -73,12 +73,12 @@
            [(and (empty? players) (< erg-price max-cost)) (list erg-list)]
            [(< erg-price max-cost)            
             (foldl (lambda (a-player akku)
-                     (begin0
+                     (begin
+                       (set! iter-players (rest iter-players))
                        (append
                         akku
                         (list erg-list)
-                        (find-best (rest iter-players) (append erg-list (list a-player))))
-                     (set! iter-players (rest iter-players)))) ;; keine ahnung wie man die aufgabe ohne set lösen kann ...
+                        (find-best iter-players (append erg-list (list a-player))))))
                    empty players)]
            [else empty])))
      
